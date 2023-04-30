@@ -138,19 +138,20 @@ class GoogleHangoutsChatAPI:
 
     def create_message(self, space_name: str, body: dict, thread_state: str = None, thread_key: str = None) -> Optional[dict]:
         url = 'spaces/{}/messages'.format(removeprefix(space_name, 'spaces/'))
-        
+
         # If using a thread key, set messageReplyOption and thread key querystring
         if thread_key is not None:
             return self._request(url, body=json.dumps(body), method='POST',
-                                    query_string='threadKey={}&messageReplyOption={}'.format(thread_key, 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD'))
-        
+                                 query_string='threadKey={}&messageReplyOption={}'.format(thread_key, 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD'))
+
         # if space is using new threading and there is a thread_id set, set messageReplyOption to keep messages in that thread
         if thread_state == 'THREADED_MESSAGES' and body.get('thread', {}).get('name', '') != '':
             return self._request(url, body=json.dumps(body), method='POST',
-                                    query_string='messageReplyOption={}'.format('REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD'))
-        
+                                 query_string='messageReplyOption={}'.format('REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD'))
+
         # otherwise, post the message
         return self._request(url, body=json.dumps(body), method='POST')
+
 
 class HangoutsChatRoom(Room):
     """
@@ -166,7 +167,7 @@ class HangoutsChatRoom(Room):
     def _load(self):
         space = self.chat_api.get_space(self.space_id)
         self.does_exist = bool(space)
-        self.display_name = space.get('displayName','') if self.does_exist else ''
+        self.display_name = space.get('displayName', '') if self.does_exist else ''
 
     def join(self, username=None, password=None):
         raise RoomsNotSupportedError()
@@ -337,7 +338,7 @@ class GoogleHangoutsChatBackend(ErrBot):
                                   sender_blob.get('displayName', ''),
                                   sender_blob.get('email', ''),
                                   sender_blob.get('type', ''))
-        message_body = data['message'].get('text','')
+        message_body = data['message'].get('text', '')
         context = {
             'space_id': data['space']['name'],
             'thread_id': data['message']['thread']['name'],
@@ -346,7 +347,7 @@ class GoogleHangoutsChatBackend(ErrBot):
 
         if 'attachment' in data['message']:
             context['attachment'] = data['message']['attachment']
-        # pass httplib2.Http() authenticated handler to errbot. uselful to download attachments
+        # pass httplib2.Http() authenticated handler to errbot. useful to download attachments
         context['downloader'] = self.chat_api._download
 
         msg = Message(body=message_body.strip(), frm=sender, extras=context)
@@ -563,7 +564,7 @@ class GoogleHangoutsChatBackend(ErrBot):
     def change_presence(self, status='online', message=''):
         return None
 
-    @property
+    @ property
     def mode(self):
         return 'Google_Hangouts_Chat'
 
