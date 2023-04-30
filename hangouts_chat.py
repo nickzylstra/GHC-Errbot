@@ -350,6 +350,11 @@ class GoogleHangoutsChatBackend(ErrBot):
         # pass httplib2.Http() authenticated handler to errbot. useful to download attachments
         context['downloader'] = self.chat_api._download
 
+        # the errBot framework doesn't provide an easy way to open a GHC dialog
+        # so add the ability to the context so it can be used at the bot command level
+        # open_dialog = msg._extras.get('open_dialog', None)
+        context['open_dialog'] = self.open_dialog
+
         msg = Message(body=message_body.strip(), frm=sender, extras=context)
 
         is_dm = data['message']['space']['type'] == 'DM'
@@ -433,6 +438,30 @@ class GoogleHangoutsChatBackend(ErrBot):
                 'thread_id': gc.get('thread', {}).get('name', ''),
                 'thread_key': thread_key
             }
+
+    # https://developers.google.com/chat/how-tos/dialogs#python_1
+    def open_dialog(self, requesting_message, dialog_body) -> Optional[dict]:
+        log.info("Opening dialog")
+
+        message_payload = {
+            'action_response': {
+                'type': 'DIALOG',
+                'dialog_action': {
+                    'dialog': {
+                        'body': dialog_body,
+                    }
+                }
+            }
+        }
+
+        space_id, thread_id, thread_key, thread_state = self.prep_message_context(requesting_message)
+        if not space_id:
+            log.info(dialog_body)
+            return
+        if thread_id:
+            message_payload['thread'] = {'name': thread_id}
+
+        self.chat_api.create_message(space_id, message_payload, thread_state, thread_key)
 
     # Legacy send_card signature.  This is being deprecated in favor of errbot upstream signature that matches other built-in plugins.
     def send_card_deprecated(self, cards, space_id, thread_id=None):
